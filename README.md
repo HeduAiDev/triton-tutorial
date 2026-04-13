@@ -65,6 +65,7 @@ pip install -r requirements.txt
 | 24 | 调试与性能分析 | TRITON_INTERPRET、device_print、NSight |
 | 25 | 编译器 IR | TTIR → TTGIR → LLVM IR → PTX |
 | 26 | 生产集成 | autograd.Function、torch.compile |
+| 27 | PyPTO vs Triton | 跨平台矩阵乘法对比：昇腾 NPU 编程 |
 
 ## CUDA → Triton 概念映射
 
