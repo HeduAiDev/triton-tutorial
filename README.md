@@ -41,9 +41,9 @@ pip install -r requirements.txt
 | 序号 | 主题 | 对应 CUDA 实现 |
 |------|------|---------------|
 | 12 | 共享内存控制 | `02simt_smem` → block_ptr |
-| 13 | 内存 Swizzle | `03simt_smemT` → L2 缓存优化 |
-| 14 | 软件流水线 | `04simt_pipline` → num_stages |
-| 15 | Split-K 并行 | 新增：K 维并行切分 |
+| 13 | 软件流水线 | `04simt_pipline` → num_stages (smem+pipeline) |
+| 14 | Split-K 并行 | K 维并行切分 (smem+pipeline+splitk) |
+| 15 | L2 Cache Swizzle | `03simt_smemT` → L2 缓存优化 (smem+pipeline+swizzle) |
 | 16 | 混合精度策略 | FP16/FP32/TF32/BF16 累加 |
 | 17 | Tensor Core 深入 | 对应 `wmma/mma` → tl.dot 映射 |
 | 18 | 终极优化 GEMM | 所有技巧组合 + 对比 cuBLAS |
@@ -84,13 +84,13 @@ pip install -r requirements.txt
 ## 性能目标
 
 ```
-朴素 GEMM:        ~14.8 ms  (baseline)
-分块 GEMM:        ~1.2 ms   (12x↑)
-共享内存 GEMM:     ~1.1 ms   (13x↑)
-Swizzle GEMM:     ~0.8 ms   (18x↑)
-流水线 GEMM:      ~0.7 ms   (21x↑)
-Tensor Core GEMM: ~0.3 ms   (46x↑)
-cuBLAS:          ~0.25 ms  (参考)
+朴素 GEMM:           ~14.8 ms  (baseline)
+分块 GEMM:           ~1.2 ms   (12x↑)
+共享内存 GEMM (Ch12): ~1.1 ms   (smem)
+流水线 GEMM (Ch13):   ~0.7 ms   (smem+pipeline)
+Swizzle GEMM (Ch15):  ~0.6 ms   (smem+pipeline+swizzle)
+Tensor Core (Ch17):   ~0.3 ms   (all optimizations)
+cuBLAS:              ~0.25 ms  (参考)
 ```
 
 *测试条件：M=N=2048, K=1024, FP16*
