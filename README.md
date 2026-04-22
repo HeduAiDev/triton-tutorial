@@ -81,16 +81,33 @@ pip install -r requirements.txt
 | 软件流水线 | `num_stages` 参数 |
 | Bank Conflict 避免 | 自动 Swizzle |
 
-## 性能目标
+## 性能评测协议
 
-```
-朴素 GEMM:           ~14.8 ms  (baseline)
-分块 GEMM:           ~1.2 ms   (12x↑)
-共享内存 GEMM (Ch12): ~1.1 ms   (smem)
-流水线 GEMM (Ch13):   ~0.7 ms   (smem+pipeline)
-Swizzle GEMM (Ch15):  ~0.6 ms   (smem+pipeline+swizzle)
-Tensor Core (Ch17):   ~0.3 ms   (all optimizations)
-cuBLAS:              ~0.25 ms  (参考)
+Part 3 的 GEMM 优化章节（Ch.12-Ch.18）统一使用同一组固定矩阵形状进行 benchmark，以保证各章结果可以直接横向比较：
+
+```python
+benchmark_shapes = [
+    ("square-2k",       2048,  2048,  2048),
+    ("square-4k",       4096,  4096,  4096),
+    ("tall-8k-x-512",   8192,   512,  2048),
+    ("tall-16k-x-256", 16384,   256,  2048),
+    ("wide-512-x-8k",    512,  8192,  2048),
+    ("largeK-2k-x-8k",  2048,  2048,  8192),
+    ("largeK-1k-x-16k", 1024,  1024, 16384),
+]
 ```
 
-*测试条件：M=N=2048, K=1024, FP16*
+统一规则：
+
+- 主指标是 `latency_ms`
+- 每章都提供至少一个包含具体数值的 benchmark 表
+- 辅助指标包括 `tflops`、`speedup_vs_cublas`、`speedup_vs_previous`、`max_err`、`passed`
+- 正确性基准统一使用 `torch.matmul`（对应 cuBLAS）
+- 若某个方法失败或精度不通过，会保留为 `NaN` / `passed=False`，而不是被隐藏
+- Ch.18 额外提供一张全局汇总图，用同一份 shared-shape 数据对比代表性方法
+
+这样可以同时观察：
+
+- 相同 shape 下，不同优化步骤的延迟变化
+- 哪些优化对 tall-skinny / wide-short / large-K shape 更有效
+- Triton 终极 kernel 与 cuBLAS 在不同 workload 上的差距
